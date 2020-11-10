@@ -1,17 +1,82 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter import *
 import tkinter.font as font
 import smtplib
 import email
 from email.header import decode_header
 from imapclient import IMAPClient
-import imaplib
+import pyttsx3
+import speech_recognition as sr
+import datetime
 
+import imaplib
 sender_host = 'smtp.gmail.com'
 reciever_host = 'imap.gmail.com'
+logintext1="Login to your account."
+logintext2="  :(  Enter correct credentials."
+logintext3="Logged out, Login to other account."
+mainpagetext1='Welcome to Homepage'
+mainpagetext2='All unread cleared'
+mainpagetext3='Inbox cleared'
+intxt='inbox.txt'
+sntxt='sent.txt'
+inTitle='Inbox'
+snTitle='Sentbox'
+engine=pyttsx3.init()
+voice=engine.getProperty('voices')
+engine.setProperty('voices',voice[1].id)
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+def wishme():
+    hour=int(datetime.datetime.now().hour)
+    if hour>=0 and hour<12:
+        speak("Good morning Sir")
+    elif hour>=12 and hour<5:
+        speak("Good afternoon sir")
+    else:
+        speak("good evening sir")
 
-def showinbox():
-    temp=open('inbox.txt','r')
+    speak("I am your Email client")
+
+def takecommand():
+    r=sr.Recognizer()
+    with sr.Microphone() as source:
+        r.pause_threshold=.5
+        audio=r.listen(source)
+
+    try:
+        query=r.recognize_google(audio,language='en-in')
+    except:
+        speak("Say that again please....")
+        return "None"
+    return query
+def main_audio():
+    volume = engine.getProperty('volume')
+    rate = engine.getProperty('rate')
+    engine.setProperty('rate', 175)
+    speak('what can i do for you sir')
+    while True:
+        query=takecommand().lower()
+        if "compose new" in query or "send an email" in query or "create new " in query:
+            speak('opening compose box for you sir')
+            compose_new()
+        elif "open my inbox" in query or "show inbox" in query or "read my inbox" in query:
+            speak('opening inbox for you sir')
+            read_inbox()
+        elif "delete complete inbox" in query or "delete my complete inbox" in query or "clear my inbox" in query:
+            speak('deleting all mails from your inbox sir')
+            delete_all_inbox()
+        elif "sentbox" in query:
+            speak('opening your sent box sir')
+            read_sent()
+        elif "delete all unseen" in query or "clear all unseen" in query or "remove unseen" in query:
+            speak('trying to delete all unseen mails from you inbox sir.')
+            delete_unseen()
+
+def show(a,b):
+    temp=open(a,'r')
     window=tk.Tk()
     window.geometry("1280x500")
     window.title('Inbox')
@@ -20,8 +85,8 @@ def showinbox():
     def g():
         window.destroy()
     mylist=Listbox(window,yscrollcommand=sb.set,width=140,font=(None,12),height=50)
-    back_button = tk.Button(text="Go Back", foreground='Yellow', background='Red',font=(None,15),height=2,command=lambda: [g(),main_page()])
-    greeting = tk.Label(text="Inbox", foreground='Green', background='Black',font=(None,17),width=80,height=2)
+    back_button = tk.Button(text="Go Back",bd='5', foreground='Yellow', background='Red',font=(None,15),height=2,command=lambda: [g(),main_page(mainpagetext1)])
+    greeting = tk.Label(text=b,bd='8', foreground='Green', background='Black',font=(None,17),width=80,height=2)
     greeting.pack()
     back_button.place(x=0.0)
     for i in temp:
@@ -30,27 +95,7 @@ def showinbox():
     sb.config(command=mylist.yview)
     window.mainloop()
 
-def showsent():
-    temp=open('inbox.txt','r')
-    window=tk.Tk()
-    window.geometry("1280x500")
-    window.title('Sent Box')
-    sb=Scrollbar(window)
-    sb.pack(side=RIGHT,fill=Y)
-    def g():
-        window.destroy()
-    mylist=Listbox(window,yscrollcommand=sb.set,width=140,font=(None,12),height=50)
-    back_button = tk.Button(text="Go Back", foreground='Yellow', background='Red',font=(None,15),height=2,command=lambda: [g(),main_page()])
-    greeting = tk.Label(text="Sent Box", foreground='Green', background='Black',font=(None,17),width=80,height=2)
-    greeting.pack()
-    back_button.place(x=0.0)
-    for i in temp:
-        mylist.insert(END,i)
-    mylist.pack(pady=2.0,side=LEFT)
-    sb.config(command=mylist.yview)
-    window.mainloop()
 
-#batukeshwar
 def  sent_successfully():
     myfont = font.Font(family='Helvetica')
     window4=tk.Tk()
@@ -59,55 +104,11 @@ def  sent_successfully():
     label4.pack()
     def e():
         window4.destroy()
-    back_button = tk.Button(text="Go Back", foreground='Yellow', background='Red',command=lambda: [e(), main_page()])
+    back_button = tk.Button(text="Go Back",bd='5', foreground='Yellow', background='Red',command=lambda: [e(), main_page(mainpagetext1)])
     back_button['font'] = myfont
     back_button.pack()
-#suhail
-def  logout_successfully():
-    window1 = tk.Tk()
-    window1.title('Login')
 
-    def a():
-        window1.destroy()
 
-    myfont = font.Font(family='Helvetica')
-    greeting1 = tk.Label(text="You have successfully logged out.", foreground='Green', background='Black',font=(None, 15), width=40, height=2)
-    greeting2 = tk.Label(text="Login to another account.", foreground='Green', background='Black',font=(None, 15), width=40, height=2)
-    label1 = tk.Label(text="Email-Id", font=(None, 15), width=40, height=2)
-    label2 = tk.Label(text="Password", font=(None, 15), width=40, height=2)
-    user1 = tk.Entry(text='Username', bg='Black', fg='Green', width=35)
-    user1['font'] = myfont
-    password1 = tk.Entry(text='Password', bg='black', fg='Green', width=35)
-    password1['font'] = myfont
-
-    def c(user1, password1):
-        global user
-        global password
-        user = user1.get()
-        password = password1.get()
-        # def l():
-        session2 = imaplib.IMAP4_SSL(reciever_host)
-        try:
-            k = session2.login(user, password)[0]
-            a()
-            main_page()
-        except:
-            a()
-            login2()
-
-    button = tk.Button(text="Login", foreground='Yellow', background='Red', command=lambda: [c(user1, password1)])
-
-    button['font'] = myfont
-    greeting1.pack()
-    greeting2.pack()
-    label1.pack()
-    user1.pack()
-    label2.pack()
-    password1.pack()
-    button.pack()
-    window1.mainloop()
-
-#ashwani singh
 def error1():
     myfont = font.Font(family='Helvetica')
     window3=tk.Tk()
@@ -116,49 +117,11 @@ def error1():
     label3.pack()
     def e():
         window3.destroy()
-    back_button = tk.Button(text="Go Back", foreground='Yellow', background='Red',command=lambda: [e(), main_page()])
-    back_button['font'] = myfont
-    back_button.pack()
-def error2():
-    myfont = font.Font(family='Helvetica')
-    window3=tk.Tk()
-    window3.title("Error")
-    label3=tk.Label(text='Sorry :(   Try again.',fg='Green',bg='Black',font=(None, 15),width=40,height=10)
-    label3.pack()
-    def e():
-        window3.destroy()
-    back_button = tk.Button(text="Go Back", foreground='Yellow', background='Red',command=lambda: [e(), login1()])
+    back_button = tk.Button(text="Go Back",bd='5', foreground='Yellow', background='Red',command=lambda: [e(), main_page(mainpagetext1)])
     back_button['font'] = myfont
     back_button.pack()
 
-def error3():
-    myfont = font.Font(family='Helvetica')
-    window3=tk.Tk()
-    window3.title("Cleared")
-    label3=tk.Label(text='Sorry :(   Try again.',fg='Green',bg='Black',font=(None, 15),width=40,height=10)
-    label3.pack()
-    def e():
-        window3.destroy()
-    back_button = tk.Button(text="Go Back", foreground='Yellow', background='Red',command=lambda: [e(), main_page()])
-    back_button['font'] = myfont
-    back_button.pack()
-#suhail
 
-
-#ashwani garg
-def del_all():
-    myfont = font.Font(family='Helvetica')
-    window5=tk.Tk()
-    window5.title("Clear all")
-    label5=tk.Label(text='You have cleared all from Inbox.',fg='Green',bg='Black',font=(None, 15),width=40,height=10)
-    label5.pack()
-    def e():
-        window5.destroy()
-    back_button = tk.Button(text="Go Back", foreground='Yellow', background='Red',command=lambda: [e(), main_page()])
-    back_button['font'] = myfont
-    back_button.pack()
-
-#ashwani garg
 def compose_new():
     window = tk.Tk()
     window.title('Compose')
@@ -174,21 +137,13 @@ def compose_new():
     reciever_id['font'] = myfont
     entrysub['font'] = myfont
     entrymain['font'] = myfont
-
-    def g():
-        window.destroy()
-
     def d(reciever_id, entrymain):
         global reciever
         reciever = reciever_id.get()
-        #global sub
-        #sub=entrysub.get()
         global msg1
         msg1 = entrymain.get("1.0", 'end-1c')
-        g()
-    sendmail = tk.Button(text="Send", foreground='Yellow', background='Red',
-                         command=lambda: [d(reciever_id, entrymain), compose2()])
-
+        window.destroy()
+    sendmail = tk.Button(text="Send",bd='5', foreground='Yellow', background='Red',command=lambda: [d(reciever_id, entrymain), compose2()])
     sendmail['font'] = myfont
     greeting.pack()
     label5.pack()
@@ -198,132 +153,65 @@ def compose_new():
     label7.pack()
     entrymain.pack()
     sendmail.pack()
-    back_button = tk.Button(text="Go Back", foreground='Yellow', background='Red',
-                            command=lambda: [g(),main_page()])
+    def g():
+        window.destroy()
+    back_button = tk.Button(text="Go Back",bd='5', foreground='Yellow', background='Red',command=lambda: [g(),main_page(mainpagetext1)])
     back_button['font']=myfont
     back_button.pack()
     window.mainloop()
 
-#batukeshwar vats
-def main_page():
+
+def main_page(mainpagetext1):
     root = tk.Tk()
     root.title('Homepage')
-
+    n=tk.StringVar()
+    num=ttk.Combobox(root,width = 5, textvariable = n)
+    num['values'] = ('1','2','3','4','5','6','7','8','9','10')
+    def a():
+        speak('opening compose box sir')
     def b():
         root.destroy()
-
-    greeting = tk.Label(text="Welcome to Homepage", foreground='Green', background='Black', width=60, height=2,font=(None,15))
+    greeting = tk.Label(text=mainpagetext1, foreground='Green', background='Black', width=60, height=2,font=(None,15))
     greeting.pack()
     topFrame = Frame(root)
     topFrame.pack()
     myfont = font.Font(family='Helvetica')
-    create = tk.Button(topFrame, text='Compose', bg='Red', fg='green', width=50, command=lambda: [b(), compose_new()])
-    inbox = tk.Button(topFrame, text='Inbox', bg='Red', fg='green', width=50, command=lambda:[b(),read_inbox()])
-    sent = tk.Button(topFrame, text='Sent', bg='Red', fg='green', width=50, command=lambda :[b(),read_sent()])
-    delete_all_read = tk.Button(topFrame, text='Delete all unseen', bg='Red', fg='green', width=50,command=lambda:[b(),delete_unseen()])
-    delete_all = tk.Button(topFrame, text='Delete all', bg='Red', fg='green', width=50, command=lambda:[b(),delete_all_inbox()])
-    logout = tk.Button(text="Logout", foreground='Yellow', background='Red', command=lambda:[b(),logout_account()])
+    create = tk.Button(topFrame, text='Compose',bd='5', bg='Red', fg='Yellow', width=50, command=lambda: [b(),a(), compose_new()])
+    inbox = tk.Button(topFrame, text='Inbox',bd='5', bg='Red', fg='Yellow', width=50, command=lambda:[b(),read_inbox()])
+    sent = tk.Button(topFrame, text='Sent',bd='5', bg='Red', fg='Yellow', width=50, command=lambda :[b(),read_sent()])
+    delete_all_read = tk.Button(topFrame, text='Delete unseen from Inbox',bd='5', bg='Red', fg='Yellow', width=50,command=lambda:[b(),delete_unseen()])
+    delete_all = tk.Button(topFrame, text='Delete complete Inbox',bd='5', bg='Red', fg='Yellow', width=50, command=lambda:[b(),delete_all_inbox()])
+    logout = tk.Button(text="Logout", foreground='Green',bd='5', background='Red', command=lambda:[b(),logout_account()])
+    control_with_audio = tk.Button(text="Control with audio.", foreground='Green',bd='5', background='Red', command=lambda:[b(),main_audio()])
     create['font'] = myfont
     inbox['font'] = myfont
     sent['font'] = myfont
     delete_all['font'] = myfont
     delete_all_read['font'] = myfont
     logout['font'] = myfont
+    control_with_audio['font'] = myfont
     create.pack()
     inbox.pack()
     sent.pack()
     delete_all.pack()
     delete_all_read.pack()
     logout.pack()
-    root.mainloop()
-#batukeshwarvats
-def main_page2():
-    root = tk.Tk()
-    root.title('Homepage')
-
-    def b():
-        root.destroy()
-
-    greeting1 = tk.Label(text="All unread cleared", foreground='Green', background='Black', width=60, height=2,font=(None,15))
-    #greeting2 = tk.Label(text="Welcome to Homepage", foreground='Green', background='Black', width=60, height=2,font=(None,15))
-    greeting1.pack()
-    #greeting2.pack()
-    topFrame = Frame(root)
-    topFrame.pack()
-    myfont = font.Font(family='Helvetica')
-    create = tk.Button(topFrame, text='Compose', bg='Red', fg='green', width=50, command=lambda: [b(), compose_new()])
-    inbox = tk.Button(topFrame, text='Inbox', bg='Red', fg='green', width=50, command=read_inbox)
-    sent = tk.Button(topFrame, text='Sent', bg='Red', fg='green', width=50, command=read_sent)
-    delete_all_read = tk.Button(topFrame, text='Delete all unseen', bg='Red', fg='green', width=50,command=lambda:[b(),delete_unseen()])
-    delete_all = tk.Button(topFrame, text='Delete all', bg='Red', fg='green', width=50, command=lambda:[b(),delete_all_inbox()])
-    logout = tk.Button(text="Logout", foreground='Yellow', background='Red', command=lambda:[b(),logout_account()])
-    create['font'] = myfont
-    inbox['font'] = myfont
-    sent['font'] = myfont
-    delete_all['font'] = myfont
-    delete_all_read['font'] = myfont
-    logout['font'] = myfont
-    create.pack()
-    inbox.pack()
-    sent.pack()
-    delete_all.pack()
-    delete_all_read.pack()
-    logout.pack()
-    root.mainloop()
-#batukeshwar vats
-def main_page3():
-    root = tk.Tk()
-    root.title('Homepage')
-
-    def b():
-        root.destroy()
-
-    greeting1 = tk.Label(text="Inbox cleared", foreground='Green', background='Black', width=60, height=2,font=(None,15))
-    #greeting2 = tk.Label(text="Welcome to Homepage", foreground='Green', background='Black', width=60, height=2,font=(None,15))
-    greeting1.pack()
-    #greeting2.pack()
-    topFrame = Frame(root)
-    topFrame.pack()
-    myfont = font.Font(family='Helvetica')
-    create = tk.Button(topFrame, text='Compose', bg='Red', fg='green', width=50, command=lambda: [b(), compose_new()])
-    inbox = tk.Button(topFrame, text='Inbox', bg='Red', fg='green', width=50, command=read_inbox)
-    sent = tk.Button(topFrame, text='Sent', bg='Red', fg='green', width=50, command=read_sent)
-    delete_all_read = tk.Button(topFrame, text='Delete all unseen', bg='Red', fg='green', width=50,command=lambda:[b(),delete_unseen()])
-    delete_all = tk.Button(topFrame, text='Delete all', bg='Red', fg='green', width=50, command=lambda:[b(),delete_all_inbox()])
-    logout = tk.Button(text="Logout", foreground='Yellow', background='Red', command=lambda:[b(),logout_account()])
-    create['font'] = myfont
-    inbox['font'] = myfont
-    sent['font'] = myfont
-    delete_all['font'] = myfont
-    delete_all_read['font'] = myfont
-    logout['font'] = myfont
-    create.pack()
-    inbox.pack()
-    sent.pack()
-    delete_all.pack()
-    delete_all_read.pack()
-    logout.pack()
+    control_with_audio.pack()
+    root.configure(bg='#003feb')
     root.mainloop()
 
 
-##login page
-#ashwani singh
-def login1():
+def login1(logintext1):
     window1 = tk.Tk()
     window1.title('Login')
-
-    def a():
-        window1.destroy()
-
     myfont = font.Font(family='Helvetica')
-    greeting = tk.Label(text="Login to your Account.", foreground='Green', background='Black',font=(None,15),width=40,height=2)
-    label1 = tk.Label(text="Email-Id",font=(None,15),width=40,height=2)
-    label2 = tk.Label(text="Password",font=(None,15),width=40,height=2)
+    greeting = tk.Label(text=logintext1, foreground='Green', background='Black',font=(None,15),width=40,height=2)
+    label1 = tk.Label(text="Email-Id",bg='#0377fc',font=(None,15),width=40,height=2)
+    label2 = tk.Label(text="Password",bg='#0377fc',font=(None,15),width=40,height=2)
     user1 = tk.Entry(text='Username', bg='Black', fg='Green',width=35)
     user1['font'] = myfont
-    password1 = tk.Entry(text='Password', bg='black', fg='Green',width=35)
+    password1 = tk.Entry(text='Password',show="*", bg='black', fg='Green',width=35)
     password1['font'] = myfont
-
     def c(user1, password1):
         global user
         global password
@@ -332,15 +220,14 @@ def login1():
         session2 = imaplib.IMAP4_SSL(reciever_host)
         try:
             k=session2.login(user, password)[0]
-            a()
-            main_page()
+            speak('you have logged in sir')
+            window1.destroy()
+            main_page(mainpagetext1)
         except:
-            a()
-            login2()
-
-
-    button = tk.Button(text="Login", foreground='Yellow', background='Red',width=10,command=lambda: [c(user1, password1), a(), main_page()])
-
+            window1.destroy()
+            speak('Sir ,maybe credentials were wrong')
+            login1(logintext2)
+    button = tk.Button(text="Login",bd='5', foreground='Yellow', background='Red',width=10,command=lambda: [c(user1, password1), main_page(mainpagetext1)])
     button['font'] = myfont
     greeting.pack()
     label1.pack(ipady=3)
@@ -348,77 +235,32 @@ def login1():
     label2.pack(ipady=3)
     password1.pack(ipady=3)
     button.pack(ipady=3)
+    window1.configure(bg='#0377fc')
     window1.mainloop()
 
 
-
-#batukeshwarvats
-def login2():
-    window1 = tk.Tk()
-    window1.title('Login')
-
-    def a():
-        window1.destroy()
-
-    myfont = font.Font(family='Helvetica')
-    greeting = tk.Label(text="  :(  Enter correct credentials.", foreground='Green', background='Black',font=(None,15),width=40,height=2)
-    label1 = tk.Label(text="Email-Id",font=(None,15),width=40,height=2)
-    label2 = tk.Label(text="Password",font=(None,15),width=40,height=2)
-    user1 = tk.Entry(text='Username', bg='Black', fg='Green',width=35)
-    user1['font'] = myfont
-    password1 = tk.Entry(text='Password', bg='black', fg='Green',width=35)
-    password1['font'] = myfont
-
-    def c(user1, password1):
-        global user
-        global password
-        user = user1.get()
-        password = password1.get()
-    #def l():
-        session2 = imaplib.IMAP4_SSL(reciever_host)
-        try:
-            k=session2.login(user, password)[0]
-            a()
-            main_page()
-        except:
-            a()
-            login2()
-
-
-    button = tk.Button(text="Login", foreground='Yellow', background='Red',command=lambda:[c(user1,password1)])
-
-    button['font'] = myfont
-    greeting.pack()
-    label1.pack()
-    user1.pack()
-    label2.pack()
-    password1.pack()
-    button.pack()
-    window1.mainloop()
-
-
-#ashwani singh
 def compose2():
     try:
         session = smtplib.SMTP(sender_host, 587)
         session.starttls()
         session.login(user, password)
         session.sendmail(user, reciever, msg1)
+        speak('Mail has been sent sucessfully sir')
         compose_new()
         session.quit()
     except:
         error1()
 
-#batukeshwar
+
 def read_inbox():
     try:
+        speak('opening inbox for you')
         session2 = imaplib.IMAP4_SSL(reciever_host)
         session2.login(user, password)
         status, message = session2.select('Inbox')
-        N = 5
-
         message = int(message[0])
         temp=open('inbox.txt','w')
+        N=5
         for i in range(message, message - N, -1):
             res, msg2 = session2.fetch(str(i), "(RFC822)")
             for response in msg2:
@@ -428,53 +270,57 @@ def read_inbox():
                     if isinstance(subject, bytes):
                         subject = subject.decode()
                     from_ = msg2.get("From")
+                    temp.write("%s\n" % "  ")
                     temp.write("%s\n" % "From:")
                     temp.write("%s\n" % from_)
                     temp.write("%s\n" % "Subject:")
                     temp.write("%s\n" % subject)
                     temp.write("%s\n" % "*************************************")
         temp.close()
-        showinbox()
+        show(intxt,inTitle)
     except:
         error1()
 
-#suhail
+
 def logout_account():
     try:
+        speak('You have successfully logged out')
         session2 = imaplib.IMAP4_SSL(reciever_host)
         session2.login(user, password)
-        print("Hello")
-        logout_successfully()
+        login1(logintext3)
     except:
         error1()
 
-#suhail
+
 def delete_unseen():
     try:
+        speak('deleting unseen mails sir')
         session = IMAPClient(reciever_host, ssl=True, port=993)
         session.login(user, password)
         session.select_folder('Inbox')
         delmail = session.search('UNSEEN')
         session.delete_messages(delmail)
-        main_page2()
+        main_page(mainpagetext2)
     except:
         error1()
 
-#ashwani garg
+
 def delete_all_inbox():
     try:
+        speak('deleting all mails sir')
         session = IMAPClient(reciever_host, ssl=True, port=993)
         session.login(user, password)
         session.select_folder('Inbox')
         delmail = session.search('ALL')
         session.delete_messages(delmail)
-        main_page3()
+        main_page(mainpagetext3)
     except:
         error1()
 
-#ashwani signh
+
 def read_sent():
     try:
+        speak('trying to show your sent box sir')
         session2 = imaplib.IMAP4_SSL(reciever_host)
         session2.login(user, password)
         status, message = session2.select('"[Gmail]/Sent Mail"')
@@ -491,6 +337,7 @@ def read_sent():
                     To = msg2["To"]
                     Bcc = msg2["Bcc"]
                     Body = msg2["Body"]
+                    temp.write("%s\n" % "  ")
                     temp.write("%s\n" % "To")
                     temp.write("%s\n" % To)
                     temp.write("%s\n" % "Bcc:")
@@ -498,13 +345,11 @@ def read_sent():
                     temp.write("%s\n" % "Subject")
                     temp.write("%s\n" % subject)
                     temp.write("%s\n" % "*************************************")
-
         temp.close()
-        showsent()
-
+        show(sntxt,snTitle)
     except:
         error1()
 
-login1()
-
+wishme()
+login1(logintext1)
 
